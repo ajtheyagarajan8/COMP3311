@@ -31,12 +31,11 @@ FROM types t
 JOIN moves m ON m.of_type = t.id
 -- count all moves of the type above
 
--- join to find Pokémon who learn these moves
+-- join to find pokemon who have learnt these moves
 JOIN learnable_moves lm ON lm.learns = m.id
 JOIN pokemon p ON p.id = lm.learnt_by AND p.first_type = t.id
 JOIN PokemonWith10PlusSameTypeMoves ps ON ps.PokemonID = p.id
 GROUP BY t.name;
-
 
 '''
 

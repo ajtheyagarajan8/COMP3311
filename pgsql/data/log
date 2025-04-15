@@ -3747,3 +3747,420 @@
 2025-04-15 18:57:17.884 AEST [1679247] LOG:  checkpoint complete: wrote 59 buffers (0.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=5.613 s, sync=0.001 s, total=5.616 s; sync files=29, longest=0.001 s, average=0.001 s; distance=336 kB, estimate=336 kB; lsn=0/278BC5A0, redo lsn=0/278BC510
 2025-04-15 19:02:12.984 AEST [1679247] LOG:  checkpoint starting: time
 2025-04-15 19:02:17.296 AEST [1679247] LOG:  checkpoint complete: wrote 44 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=4.311 s, sync=0.001 s, total=4.312 s; sync files=28, longest=0.001 s, average=0.001 s; distance=222 kB, estimate=325 kB; lsn=0/278F3E00, redo lsn=0/278F3DA8
+2025-04-15 19:37:12.926 AEST [1679247] LOG:  checkpoint starting: time
+2025-04-15 19:37:13.330 AEST [1679247] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.402 s, sync=0.001 s, total=0.404 s; sync files=4, longest=0.001 s, average=0.001 s; distance=7 kB, estimate=293 kB; lsn=0/278F5DD0, redo lsn=0/278F5D78
+2025-04-15 19:38:04.311 AEST [1699475] ERROR:  cannot create index on relation "pokemonwith10plussametypemoves"
+2025-04-15 19:38:04.311 AEST [1699475] DETAIL:  This operation is not supported for views.
+2025-04-15 19:38:04.311 AEST [1699475] STATEMENT:  
+	-- First, create the indexes to optimize the query performance
+	
+	-- Index on types.id (used in JOIN condition with moves and pokemon)
+	CREATE INDEX idx_types_id ON types (id);
+	
+	-- Index on moves.id (used in JOIN condition with learnable_moves)
+	CREATE INDEX idx_moves_id ON moves (id);
+	
+	-- Index on pokemon.id (used in JOIN condition with learnable_moves and for filtering)
+	CREATE INDEX idx_pokemon_id ON pokemon (id);
+	
+	-- Index on pokemon.first_type (used in JOIN condition with types)
+	CREATE INDEX idx_pokemon_first_type ON pokemon (first_type);
+	
+	-- Index on learnable_moves.learns (used in JOIN condition with moves)
+	CREATE INDEX idx_learnable_moves_learns ON learnable_moves (learns);
+	
+	-- Index on learnable_moves.learnt_by (used in JOIN condition with pokemon)
+	CREATE INDEX idx_learnable_moves_learnt_by ON learnable_moves (learnt_by);
+	
+	-- Index on PokemonWith10PlusSameTypeMoves.PokemonID (used in JOIN condition with pokemon)
+	CREATE INDEX idx_pokemon_with_10_plus_same_type_moves ON PokemonWith10PlusSameTypeMoves (PokemonID);
+	
+	-- Now run the main query
+	SELECT
+	    t.name AS TypeName,
+	    COUNT(DISTINCT m.id) AS num_moves,
+	    COUNT(DISTINCT p.id) AS num_pokemon_with_10_plus_moves
+	FROM types t
+	JOIN moves m ON m.of_type = t.id
+	-- join to find Pokémon who learn these moves
+	JOIN learnable_moves lm ON lm.learns = m.id
+	JOIN pokemon p ON p.id = lm.learnt_by AND p.first_type = t.id
+	-- this join filters Pokémon who learn more than 10 moves of the same type
+	JOIN PokemonWith10PlusSameTypeMoves ps ON ps.PokemonID = p.id
+	GROUP BY t.name
+	ORDER BY t.name;
+	
+	
+2025-04-15 19:42:12.426 AEST [1679247] LOG:  checkpoint starting: time
+2025-04-15 19:42:13.733 AEST [1679247] LOG:  checkpoint complete: wrote 14 buffers (0.1%); 0 WAL file(s) added, 0 removed, 4 recycled; write=1.304 s, sync=0.001 s, total=1.308 s; sync files=20, longest=0.001 s, average=0.001 s; distance=63457 kB, estimate=63457 kB; lsn=0/2B6EE4C0, redo lsn=0/2B6EE468
+2025-04-15 20:04:38.196 AEST [1709656] ERROR:  syntax error at or near "DISTINCT" at character 26
+2025-04-15 20:04:38.196 AEST [1709656] STATEMENT:  select DISTINCT(m.name), DISTINCT(g.name) from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in;
+2025-04-15 20:05:32.399 AEST [1709656] ERROR:  column "m.name" must appear in the GROUP BY clause or be used in an aggregate function at character 17
+2025-04-15 20:05:32.399 AEST [1709656] STATEMENT:  select DISTINCT(m.name), COUNT(g.name) from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in;
+2025-04-15 20:05:39.062 AEST [1709656] ERROR:  column "m.name" must appear in the GROUP BY clause or be used in an aggregate function at character 17
+2025-04-15 20:05:39.062 AEST [1709656] STATEMENT:  select DISTINCT(m.name), COUNT(g.name) from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in
+	GROUP BY g.name;
+2025-04-15 20:06:54.021 AEST [1709656] ERROR:  missing FROM-clause entry for table "p" at character 41
+2025-04-15 20:06:54.021 AEST [1709656] STATEMENT:  select DISTINCT(m.name), COUNT(g.name), p.name from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in
+	GROUP BY m.name;
+2025-04-15 20:07:15.973 AEST [1709656] ERROR:  column "p.name" must appear in the GROUP BY clause or be used in an aggregate function at character 41
+2025-04-15 20:07:15.973 AEST [1709656] STATEMENT:  select DISTINCT(m.name), COUNT(g.name), p.name from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in
+	JOIN pokemon p on p.id = l.learnt_by
+	GROUP BY m.name;
+2025-04-15 20:09:27.153 AEST [1709656] ERROR:  column "Bulbosaur" does not exist at character 201
+2025-04-15 20:09:27.153 AEST [1709656] STATEMENT:  select DISTINCT(m.name), COUNT(g.name), p.name as pokemon from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in
+	JOIN pokemon p on p.id = l.learnt_by
+	WHERE p.name = "Bulbosaur"
+	group by m.name, p.name;
+2025-04-15 20:09:50.080 AEST [1709656] ERROR:  column "Bulbosaur" does not exist at character 201
+2025-04-15 20:09:50.080 AEST [1709656] STATEMENT:  select DISTINCT(m.name), COUNT(g.name), p.name as pokemon from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in
+	JOIN pokemon p on p.id = l.learnt_by
+	WHERE p.name = "Bulbosaur"
+	group by m.name, p.name;
+2025-04-15 20:10:07.668 AEST [1709656] ERROR:  column "Bulbasaur" does not exist at character 201
+2025-04-15 20:10:07.668 AEST [1709656] STATEMENT:  select DISTINCT(m.name), COUNT(g.name), p.name as pokemon from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in
+	JOIN pokemon p on p.id = l.learnt_by
+	WHERE p.name = "Bulbasaur"
+	group by m.name, p.name;
+2025-04-15 20:10:46.012 AEST [1709656] ERROR:  syntax error at or near "SELECT" at character 213
+2025-04-15 20:10:46.012 AEST [1709656] STATEMENT:  select DISTINCT(m.name), COUNT(g.name), p.name as pokemon from learnable_moves l
+	JOIN moves m on m.id = l.learns
+	JOIN games g on g.id = l.learnt_in
+	JOIN pokemon p on p.id = l.learnt_by
+	WHERE p.name = "Bulbasaur"
+	SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	WHERE p.name = "Bulbasaur"
+	GROUP BY m.name, p.name;
+2025-04-15 20:10:46.013 AEST [1709656] ERROR:  syntax error at or near "group" at character 1
+2025-04-15 20:10:46.013 AEST [1709656] STATEMENT:  group by m.name, p.name;
+2025-04-15 20:10:46.808 AEST [1709656] ERROR:  column "Bulbasaur" does not exist at character 201
+2025-04-15 20:10:46.808 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	WHERE p.name = "Bulbasaur"
+	GROUP BY m.name, p.name;
+2025-04-15 20:13:59.748 AEST [1709656] ERROR:  missing FROM-clause entry for table "e" at character 60
+2025-04-15 20:13:59.748 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	WHERE p.name = 'Bulbasaur'
+	GROUP BY m.name, p.name;
+2025-04-15 20:14:08.968 AEST [1709656] ERROR:  missing FROM-clause entry for table "e" at character 60
+2025-04-15 20:14:08.968 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	WHERE p.name = 'Bulbasaur'
+	GROUP BY m.name, p.name
+	;
+2025-04-15 20:14:49.100 AEST [1709656] ERROR:  relation "encounter" does not exist at character 201
+2025-04-15 20:14:49.100 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounter e ON e.occurs_with = p.idl
+	;
+2025-04-15 20:14:52.911 AEST [1709656] ERROR:  relation "encounter" does not exist at character 201
+2025-04-15 20:14:52.911 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounter e ON e.occurs_with = p.id;
+2025-04-15 20:15:02.586 AEST [1709656] ERROR:  column "m.name" must appear in the GROUP BY clause or be used in an aggregate function at character 17
+2025-04-15 20:15:02.586 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id;
+2025-04-15 20:15:20.962 AEST [1709656] ERROR:  column "e.levels" must appear in the GROUP BY clause or be used in an aggregate function at character 60
+2025-04-15 20:15:20.962 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur'
+	GROUP BY m.name, p.name;
+2025-04-15 20:16:35.367 AEST [1709656] ERROR:  syntax error at or near "m" at character 322
+2025-04-15 20:16:35.367 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND l.learnt_in > 30
+	GROUP BY m.name, p.name, e.leSELECT m.name, COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND g.generation > 3
+	GROUP BY m.name, p.name, e.levels;
+2025-04-15 20:16:35.367 AEST [1709656] ERROR:  syntax error at or near "vels" at character 1
+2025-04-15 20:16:35.367 AEST [1709656] STATEMENT:  vels;
+2025-04-15 20:16:36.660 AEST [1709656] ERROR:  column g.generation does not exist at character 259
+2025-04-15 20:16:36.660 AEST [1709656] STATEMENT:  SELECT m.name, COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND g.generation > 3
+	GROUP BY m.name, p.name, e.levels;
+2025-04-15 20:16:40.574 AEST [1709656] ERROR:  column g.generation does not exist at character 259
+2025-04-15 20:16:40.574 AEST [1709656] STATEMENT:  SELECT m.name, COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND g.generation > 3
+	GROUP BY m.name, p.name, e.levels;
+2025-04-15 20:17:03.381 AEST [1709656] ERROR:  operator does not exist: text > integer at character 277
+2025-04-15 20:17:03.381 AEST [1709656] HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+2025-04-15 20:17:03.381 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND g.name  > 30
+	GROUP BY m.name, p.name, e.levels;
+2025-04-15 20:17:11.309 AEST [1709656] ERROR:  operator does not exist: text > integer at character 276
+2025-04-15 20:17:11.309 AEST [1709656] HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+2025-04-15 20:17:11.309 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND g.name > 30
+	GROUP BY m.name, p.name, e.levels;
+2025-04-15 20:17:25.422 AEST [1709656] ERROR:  aggregate functions are not allowed in WHERE at character 269
+2025-04-15 20:17:25.422 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name), p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND COUNT(g.name) > 30
+	GROUP BY m.name, p.name, e.levels;
+2025-04-15 20:17:40.335 AEST [1709656] ERROR:  aggregate functions are not allowed in WHERE at character 283
+2025-04-15 20:17:40.335 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name) as game_count, p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND COUNT(g.name) > 30
+	GROUP BY m.name, p.name, e.levels;
+2025-04-15 20:17:54.505 AEST [1709656] ERROR:  column "game_count" does not exist at character 283
+2025-04-15 20:17:54.505 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name) as game_count, p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur' AND game_count > 30
+	GROUP BY m.name, p.name, e.levels;
+2025-04-15 20:18:57.380 AEST [1709656] ERROR:  column "l.learnt_in" must appear in the GROUP BY clause or be used in an aggregate function at character 320
+2025-04-15 20:18:57.380 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name) as game_count, p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur'
+	GROUP BY m.name, p.name, e.levels
+	HAVING l.learnt_in > 30;
+2025-04-15 20:25:27.209 AEST [1709656] ERROR:  syntax error at or near "p" at character 354
+2025-04-15 20:25:27.209 AEST [1709656] STATEMENT:  SELECT DISTINCT(m.name), COUNT(g.name) as game_count, p.name AS pokemon, e.levels
+	FROM learnable_moves l
+	JOIN moves m ON m.id = l.learns
+	JOIN games g ON g.id = l.learnt_in
+	JOIN pokemon p ON p.id = l.learnt_by
+	JOIN encounters e ON e.occurs_with = p.id
+	WHERE p.name = 'Bulbasaur'
+	GROUP BY l.learnt_in, m.name, p.name, e.levels
+	HAVING l.learnt_iSELECT
+	    p.name AS pokemon,
+	    AVG(CAST(SUBSTRING(r.Assertion FROM 'Level >= ([0-9]+)') AS INTEGER)) AS avg_level
+	FROM
+	    Learnable_Moves l
+	    JOIN Pokemon p ON p.id = l.Learnt_By
+	    JOIN Requirements r ON r.id = l.Learnt_When
+	WHERE
+	    p.name = 'Bulbasaur'
+	    AND r.Assertion LIKE 'Level >= %'
+	GROUP BY
+	    p.name;
+2025-04-15 20:25:27.209 AEST [1709656] ERROR:  syntax error at or near "n" at character 1
+2025-04-15 20:25:27.209 AEST [1709656] STATEMENT:  n > 30;
+2025-04-15 20:28:32.966 AEST [1709656] ERROR:  missing FROM-clause entry for table "m" at character 8
+2025-04-15 20:28:32.966 AEST [1709656] STATEMENT:  select
+	m.name as MoveName;
+2025-04-15 20:30:30.151 AEST [1709656] ERROR:  syntax error at or near "SELECT" at character 66
+2025-04-15 20:30:30.151 AEST [1709656] STATEMENT:  select m.name as MoveName, COUNT(DISTINCT(g.name)) as GameCount, SELECT
+	    m.name AS move_name,
+	    COUNT(DISTINCT l.game) AS num_games,
+	    ROUND(AVG(CAST(SUBSTRING(r.Assertion FROM 'Level: ([0-9]+)') AS INTEGER))) AS avg_level
+	FROM
+	    Learnable_Moves l
+	    JOIN Pokemon p ON p.id = l.Learnt_By
+	    JOIN Requirements r ON r.id = l.Learnt_When
+	    JOIN Moves m ON m.id = l.Move
+	WHERE
+	    p.name = 'Bulbasaur'
+	    AND r.Assertion LIKE 'Level: %'
+	GROUP BY
+	    m.name
+	HAVING
+	    COUNT(DISTINCT l.game) >= 30
+	ORDER BY
+	    num_games DESC;
+2025-04-15 20:30:30.547 AEST [1709656] ERROR:  column l.move does not exist at character 309
+2025-04-15 20:30:30.547 AEST [1709656] STATEMENT:  SELECT
+	    m.name AS move_name,
+	    COUNT(DISTINCT l.game) AS num_games,
+	    ROUND(AVG(CAST(SUBSTRING(r.Assertion FROM 'Level: ([0-9]+)') AS INTEGER))) AS avg_level
+	FROM
+	    Learnable_Moves l
+	    JOIN Pokemon p ON p.id = l.Learnt_By
+	    JOIN Requirements r ON r.id = l.Learnt_When
+	    JOIN Moves m ON m.id = l.Move
+	WHERE
+	    p.name = 'Bulbasaur'
+	    AND r.Assertion LIKE 'Level: %'
+	GROUP BY
+	    m.name
+	HAVING
+	    COUNT(DISTINCT l.game) >= 30
+	ORDER BY
+	    num_games DESC;
+2025-04-15 20:30:31.267 AEST [1709656] ERROR:  column l.move does not exist at character 309
+2025-04-15 20:30:31.267 AEST [1709656] STATEMENT:  SELECT
+	    m.name AS move_name,
+	    COUNT(DISTINCT l.game) AS num_games,
+	    ROUND(AVG(CAST(SUBSTRING(r.Assertion FROM 'Level: ([0-9]+)') AS INTEGER))) AS avg_level
+	FROM
+	    Learnable_Moves l
+	    JOIN Pokemon p ON p.id = l.Learnt_By
+	    JOIN Requirements r ON r.id = l.Learnt_When
+	    JOIN Moves m ON m.id = l.Move
+	WHERE
+	    p.name = 'Bulbasaur'
+	    AND r.Assertion LIKE 'Level: %'
+	GROUP BY
+	    m.name
+	HAVING
+	    COUNT(DISTINCT l.game) >= 30
+	ORDER BY
+	    num_games DESC;
+2025-04-15 20:30:53.553 AEST [1709656] ERROR:  column l.game does not exist at character 52
+2025-04-15 20:30:53.553 AEST [1709656] HINT:  Perhaps you meant to reference the column "p.name" or the column "m.name".
+2025-04-15 20:30:53.553 AEST [1709656] STATEMENT:  SELECT
+	    m.name AS move_name,
+	    COUNT(DISTINCT l.game) AS num_games,
+	    ROUND(AVG(CAST(SUBSTRING(r.Assertion FROM 'Level: ([0-9]+)') AS INTEGER))) AS avg_level
+	FROM
+	    Learnable_Moves l
+	    JOIN Pokemon p ON p.id = l.Learnt_By
+	    JOIN Requirements r ON r.id = l.Learnt_When
+	    JOIN Moves m ON m.id = l.LEARNS
+	WHERE
+	    p.name = 'Bulbasaur'
+	    AND r.Assertion LIKE 'Level: %'
+	GROUP BY
+	    m.name
+	HAVING
+	    COUNT(DISTINCT l.game) >= 30
+	ORDER BY
+	    num_games DESC;
+2025-04-15 20:30:56.964 AEST [1709656] ERROR:  column l.game does not exist at character 52
+2025-04-15 20:30:56.964 AEST [1709656] HINT:  Perhaps you meant to reference the column "p.name" or the column "m.name".
+2025-04-15 20:30:56.964 AEST [1709656] STATEMENT:  SELECT
+	    m.name AS move_name,
+	    COUNT(DISTINCT l.game) AS num_games,
+	    ROUND(AVG(CAST(SUBSTRING(r.Assertion FROM 'Level: ([0-9]+)') AS INTEGER))) AS avg_level
+	FROM
+	    Learnable_Moves l
+	    JOIN Pokemon p ON p.id = l.Learnt_By
+	    JOIN Requirements r ON r.id = l.Learnt_When
+	    JOIN Moves m ON m.id = l.LEARNS
+	WHERE
+	    p.name = 'Bulbasaur'
+	    AND r.Assertion LIKE 'Level: %'
+	GROUP BY
+	    m.name
+	HAVING
+	    COUNT(DISTINCT l.game) >= 30
+	ORDER BY
+	    num_games DESC;
+2025-04-15 20:31:12.202 AEST [1709656] ERROR:  column l.game does not exist at character 52
+2025-04-15 20:31:12.202 AEST [1709656] HINT:  Perhaps you meant to reference the column "p.name" or the column "m.name".
+2025-04-15 20:31:12.202 AEST [1709656] STATEMENT:  SELECT
+	    m.name AS move_name,
+	    COUNT(DISTINCT l.game) AS num_games,
+	    ROUND(AVG(CAST(SUBSTRING(r.Assertion FROM 'Level: ([0-9]+)') AS INTEGER))) AS avg_level
+	FROM
+	    Learnable_Moves l
+	    JOIN Pokemon p ON p.id = l.Learnt_By
+	    JOIN Requirements r ON r.id = l.Learnt_When
+	    JOIN Moves m ON m.id = l.LEARNS
+	WHERE
+	    p.name = 'Bulbasaur'
+	    AND r.Assertion LIKE 'Level: %'
+	GROUP BY
+	    m.name
+	HAVING
+	    COUNT(DISTINCT g.name) >= 30
+	ORDER BY
+	    num_games DESC;
+2025-04-15 20:31:47.589 AEST [1709656] ERROR:  missing FROM-clause entry for table "g" at character 436
+2025-04-15 20:31:47.589 AEST [1709656] STATEMENT:  SELECT
+	    m.name AS move_name,
+	    COUNT(DISTINCT l.learnt_in) AS num_games,
+	    ROUND(AVG(CAST(SUBSTRING(r.Assertion FROM 'Level: ([0-9]+)') AS INTEGER))) AS avg_level
+	FROM
+	    Learnable_Moves l
+	    JOIN Pokemon p ON p.id = l.Learnt_By
+	    JOIN Requirements r ON r.id = l.Learnt_When
+	    JOIN Moves m ON m.id = l.LEARNS
+	WHERE
+	    p.name = 'Bulbasaur'
+	    AND r.Assertion LIKE 'Level: %'
+	GROUP BY
+	    m.name
+	HAVING
+	    COUNT(DISTINCT g.name) >= 30
+	ORDER BY
+	    num_games DESC;
