@@ -34,18 +34,10 @@ JOIN moves m ON m.of_type = t.id
 -- join to find Pokémon who learn these moves
 JOIN learnable_moves lm ON lm.learns = m.id
 JOIN pokemon p ON p.id = lm.learnt_by AND p.first_type = t.id
-
--- subquery to filter Pokémon that learn > 10 moves of the type
-WHERE p.id IN (
-    SELECT lm2.learnt_by
-    FROM learnable_moves lm2
-    JOIN moves m2 ON lm2.learns = m2.id
-    JOIN pokemon p2 ON p2.id = lm2.learnt_by
-    WHERE p2.first_type = m2.of_type
-    GROUP BY lm2.learnt_by
-    HAVING COUNT(DISTINCT m2.id) > 10
-)
+JOIN PokemonWith10PlusSameTypeMoves ps ON ps.PokemonID = p.id
 GROUP BY t.name;
+
+
 '''
 
 def main(db):
@@ -59,13 +51,11 @@ def main(db):
             cur.execute(query)
             results = cur.fetchall()
 
-
-            print(f"{'TypeName':<12} {'#Moves':<8} {'#Pokemon':<8}"
-)
+            helpers.pretty_print_cols(("TypeName", 12), ("#Moves", 8), ("#Pokemon", 8))
 
             # Print each row
             for type, move_count, pokemon_count in results:
-                print(f"{type:<12} {move_count:<8} {pokemon_count:<8}")
+                helpers.pretty_print_cols((f"{type}", 12), (f"{move_count}", 8), (f"{pokemon_count}", 8))
 
     except psycopg2.Error as e:
             print("Query execution error:", e)

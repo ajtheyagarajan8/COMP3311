@@ -11,3 +11,14 @@ def clean(s: str) -> str:
     squish multiple whitespace characters into a single space
     """
     return re.sub(r'\s+', ' ', s.strip().title())
+
+
+def pretty_print_cols(*columns: tuple):
+    """
+    Helper function to pretty-print the different column titlees with appropriate amount 
+    of spacing with left alignment
+    """
+    line = ""
+    for value, width in columns:
+        line += f"{value:<{width}} "
+    print(line.rstrip())

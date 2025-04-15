@@ -91,4 +91,23 @@ CREATE OR REPLACE FUNCTION Super_Effective(_Type Text)
 -- Views/Functions must be defined in the correct order (dependencies first)
 -- eg if my_supper_clever_function() depends on my_other_function() then my_other_function() must be defined first
 -- Your Views/Functions Below Here
---
+
+-- Helper view to view pokemon with egg groups
+
+CREATE OR REPLACE VIEW PokemonWithEggGroups AS
+SELECT p.ID AS PokemonID, ig.Egg_group
+FROM Pokemon p
+LEFT JOIN In_Group ig ON p.ID = ig.Pokemon;
+
+-- Helper view to view pokemon with 10+ same type move
+
+CREATE OR REPLACE VIEW PokemonWith10PlusSameTypeMoves AS
+SELECT lm2.learnt_by AS PokemonID
+FROM learnable_moves lm2
+JOIN moves m2 ON lm2.learns = m2.id
+JOIN pokemon p2 ON p2.id = lm2.learnt_by
+WHERE p2.first_type = m2.of_type
+GROUP BY lm2.learnt_by
+HAVING COUNT(DISTINCT m2.id) > 10;
+
+

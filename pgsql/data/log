@@ -3708,3 +3708,42 @@
 	JOIN pokemon p ON p.first_type = t.id
 	JOIN learnable_moves lm ON lm.learnt_by = p.id, lm.learns = m.id
 	GROUP BY t.name;
+2025-04-08 22:24:11.913 AEST [554919] LOG:  received smart shutdown request
+2025-04-08 22:24:11.917 AEST [554919] LOG:  received SIGHUP, reloading configuration files
+2025-04-08 22:24:11.918 AEST [554919] LOG:  background worker "logical replication launcher" (PID 554926) exited with exit code 1
+2025-04-08 22:24:11.919 AEST [554921] LOG:  shutting down
+2025-04-08 22:24:11.920 AEST [554921] LOG:  checkpoint starting: shutdown immediate
+2025-04-08 22:24:11.922 AEST [554921] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/278682E0, redo lsn=0/278682E0
+2025-04-08 22:24:11.935 AEST [554919] LOG:  database system is shut down
+2025-04-15 18:52:12.238 AEST [1679246] LOG:  starting PostgreSQL 17.2 on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2025-04-15 18:52:12.238 AEST [1679246] LOG:  listening on Unix socket "/localstorage/z5477862/pgsql/data/.s.PGSQL.5432"
+2025-04-15 18:52:12.240 AEST [1679249] LOG:  database system was shut down at 2025-04-08 22:24:11 AEST
+2025-04-15 18:52:12.243 AEST [1679246] LOG:  database system is ready to accept connections
+2025-04-15 18:52:16.745 AEST [1679277] ERROR:  relation "pokemonwithegggroups" does not exist at character 243
+2025-04-15 18:52:16.745 AEST [1679277] STATEMENT:  
+	    SELECT g.Name AS Game,
+	       COUNT(DISTINCT pwg.Egg_group) AS Num_Distinct_Egg_Groups,
+	       COUNT(DISTINCT p.ID) AS Num_Distinct_Pokemon
+	FROM Games g
+	JOIN Pokedex pd ON g.ID = pd.Game
+	JOIN Pokemon p ON pd.National_ID = p.ID
+	LEFT JOIN PokemonWithEggGroups pwg ON p.ID = pwg.PokemonID
+	GROUP BY g.Name
+	ORDER BY g.Name;
+	
+2025-04-15 18:53:43.432 AEST [1679933] FATAL:  database "z5477862" does not exist
+2025-04-15 18:54:05.341 AEST [1680083] FATAL:  database "ass2" does not exist
+2025-04-15 18:54:22.737 AEST [1680190] FATAL:  database "helpers.sql" does not exist
+2025-04-15 18:54:28.854 AEST [1680250] FATAL:  database "z5477862" does not exist
+2025-04-15 18:54:37.975 AEST [1680563] ERROR:  syntax error at or near "-" at character 1
+2025-04-15 18:54:37.975 AEST [1680563] STATEMENT:  -
+	CREATE OR REPLACE VIEW PokemonWithEggGroups AS
+	SELECT p.ID AS PokemonID, ig.Egg_group
+	FROM Pokemon p
+	LEFT JOIN In_Group ig ON p.ID = ig.Pokemon;
+2025-04-15 18:54:37.975 AEST [1680563] ERROR:  syntax error at or near "-" at character 1
+2025-04-15 18:54:37.975 AEST [1680563] STATEMENT:  -
+2025-04-15 18:57:12.268 AEST [1679247] LOG:  checkpoint starting: time
+2025-04-15 18:57:17.884 AEST [1679247] LOG:  checkpoint complete: wrote 59 buffers (0.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=5.613 s, sync=0.001 s, total=5.616 s; sync files=29, longest=0.001 s, average=0.001 s; distance=336 kB, estimate=336 kB; lsn=0/278BC5A0, redo lsn=0/278BC510
+2025-04-15 19:02:12.984 AEST [1679247] LOG:  checkpoint starting: time
+2025-04-15 19:02:17.296 AEST [1679247] LOG:  checkpoint complete: wrote 44 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=4.311 s, sync=0.001 s, total=4.312 s; sync files=28, longest=0.001 s, average=0.001 s; distance=222 kB, estimate=325 kB; lsn=0/278F3E00, redo lsn=0/278F3DA8

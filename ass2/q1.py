@@ -31,15 +31,16 @@ def main(db):
 
     #query = "select * from pkmon where "
     studentQuery = '''
-    SELECT g.Name AS Game, COUNT(DISTINCT ig.Egg_group) AS Num_Distinct_Egg_Groups,
-        COUNT(DISTINCT p.ID) AS Num_Distinct_Pokemon
-    FROM Games g
-        JOIN Pokedex pd ON g.ID = pd.Game
-        JOIN Pokemon p ON pd.National_ID = p.ID
-        LEFT JOIN In_Group ig ON p.ID = ig.Pokemon
-        GROUP BY g.Name
-    ORDER BY g.Name;
-    '''
+    SELECT g.Name AS Game,
+       COUNT(DISTINCT pwg.Egg_group) AS Num_Distinct_Egg_Groups,
+       COUNT(DISTINCT p.ID) AS Num_Distinct_Pokemon
+FROM Games g
+JOIN Pokedex pd ON g.ID = pd.Game
+JOIN Pokemon p ON pd.National_ID = p.ID
+LEFT JOIN PokemonWithEggGroups pwg ON p.ID = pwg.PokemonID
+GROUP BY g.Name
+ORDER BY g.Name;
+'''
     
     try:
         with db.cursor() as cur:
@@ -47,11 +48,11 @@ def main(db):
             results = cur.fetchall()
 
             # Print header
-            print(f"{'GameName':<17} {'#EggGroup':<9} {'#Pokemon':<8}")
+            helpers.pretty_print_cols(("GameName", 17), ("#EggGroup", 9), ("Pokemon", 8))
 
             # Print each row
             for game, egg_groups, pokemons in results:
-                print(f"{game:<17} {egg_groups:<9} {pokemons:<8}")
+                helpers.pretty_print_cols((f"{game}", 17), (f"{egg_groups}", 9), (f"{pokemons}", 8))
 
     except psycopg2.Error as e:
             print("Query execution error:", e)
