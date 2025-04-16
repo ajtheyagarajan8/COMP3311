@@ -45,7 +45,6 @@ ORDER BY
 def main(db):
     ### Command-line args
 
-    print(sys.argv[1])
     if len(sys.argv) != 2:
         print(USAGE)
         return 1
@@ -54,13 +53,15 @@ def main(db):
 
     try:
         with db.cursor() as cur:
-            cur.execute(query, [pokemon_name])
+            cur.execute(query, ['Bulbasaur'])
             results = cur.fetchall()
+            if not results:
+                return 0
 
             helpers.pretty_print_cols(("MoveName", 16), ("#Games", 6), ("AvgLearntLevel", 16))
 
             for move_name, game, avg_learnt_level in results:
-                helpers.pretty_print_cols((f"{type}", 16), (f"{game}", 6), (f"{avg_learnt_level}", 8))
+                helpers.pretty_print_cols((f"{move_name}", 16), (f"{game}", 6), (f"{avg_learnt_level}", 8))
 
     except psycopg2.Error as e:
         print("Query execution error:", e)

@@ -4164,3 +4164,219 @@
 	    COUNT(DISTINCT g.name) >= 30
 	ORDER BY
 	    num_games DESC;
+2025-04-15 20:48:25.728 AEST [1679246] LOG:  received smart shutdown request
+2025-04-15 20:48:25.735 AEST [1679246] LOG:  received SIGHUP, reloading configuration files
+2025-04-15 20:48:25.737 AEST [1679246] LOG:  background worker "logical replication launcher" (PID 1679252) exited with exit code 1
+2025-04-15 20:48:25.738 AEST [1679247] LOG:  shutting down
+2025-04-15 20:48:25.738 AEST [1679247] LOG:  checkpoint starting: shutdown immediate
+2025-04-15 20:48:25.741 AEST [1679247] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=57111 kB; lsn=0/2B6EE570, redo lsn=0/2B6EE570
+2025-04-15 20:48:25.772 AEST [1679246] LOG:  database system is shut down
+2025-04-16 11:00:39.850 AEST [2205367] LOG:  starting PostgreSQL 17.2 on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2025-04-16 11:00:39.851 AEST [2205367] LOG:  listening on Unix socket "/localstorage/z5477862/pgsql/data/.s.PGSQL.5432"
+2025-04-16 11:00:39.853 AEST [2205370] LOG:  database system was shut down at 2025-04-15 20:48:25 AEST
+2025-04-16 11:00:39.857 AEST [2205367] LOG:  database system is ready to accept connections
+2025-04-16 11:05:39.884 AEST [2205368] LOG:  checkpoint starting: time
+2025-04-16 11:05:39.887 AEST [2205368] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.004 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/2B6EE678, redo lsn=0/2B6EE620
+2025-04-16 12:17:56.349 AEST [2205368] LOG:  checkpoint starting: immediate force wait
+2025-04-16 12:17:56.351 AEST [2205368] LOG:  checkpoint complete: wrote 10 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=10, longest=0.001 s, average=0.001 s; distance=4788 kB, estimate=4788 kB; lsn=0/2BB9B920, redo lsn=0/2BB9B8C8
+2025-04-16 12:18:00.840 AEST [2263146] LOG:  skipping vacuum of "learnable_moves" --- lock not available
+2025-04-16 12:18:02.250 AEST [2263119] ERROR:  could not extend file "base/28350/28562": Disk quota exceeded
+2025-04-16 12:18:02.250 AEST [2263119] HINT:  Check free disk space.
+2025-04-16 12:18:02.250 AEST [2263119] STATEMENT:  ALTER TABLE ONLY public.learnable_moves
+	    ADD CONSTRAINT learnable_moves_pkey PRIMARY KEY (learnt_by, learnt_in, learnt_when, learns);
+2025-04-16 12:18:02.330 AEST [2263165] ERROR:  relation "pokemonwithegggroups" does not exist at character 243
+2025-04-16 12:18:02.330 AEST [2263165] STATEMENT:  
+	    SELECT g.Name AS Game,
+	       COUNT(DISTINCT pwg.Egg_group) AS Num_Distinct_Egg_Groups,
+	       COUNT(DISTINCT p.ID) AS Num_Distinct_Pokemon
+	FROM Games g
+	JOIN Pokedex pd ON g.ID = pd.Game
+	JOIN Pokemon p ON pd.National_ID = p.ID
+	LEFT JOIN PokemonWithEggGroups pwg ON p.ID = pwg.PokemonID
+	GROUP BY g.Name
+	ORDER BY g.Name;
+	
+2025-04-16 12:18:02.393 AEST [2263169] ERROR:  relation "pokemonwith10plussametypemoves" does not exist at character 366
+2025-04-16 12:18:02.393 AEST [2263169] STATEMENT:  
+	SELECT
+	    t.name,
+	    COUNT(DISTINCT m.id) AS num_moves,
+	    COUNT(DISTINCT p.id) AS num_pokemon_with_10_plus_moves
+	FROM types t
+	JOIN moves m ON m.of_type = t.id
+	-- count all moves of the type above
+	
+	-- join to find pokemon who have learnt these moves
+	JOIN learnable_moves lm ON lm.learns = m.id
+	JOIN pokemon p ON p.id = lm.learnt_by AND p.first_type = t.id
+	JOIN PokemonWith10PlusSameTypeMoves ps ON ps.PokemonID = p.id
+	GROUP BY t.name;
+	
+	
+2025-04-16 12:18:04.445 AEST [2205368] LOG:  checkpoint starting: immediate force wait
+2025-04-16 12:18:04.448 AEST [2205368] LOG:  checkpoint complete: wrote 9 buffers (0.1%); 0 WAL file(s) added, 0 removed, 9 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=9, longest=0.001 s, average=0.001 s; distance=147187 kB, estimate=147187 kB; lsn=0/34B586A0, redo lsn=0/34B58648
+2025-04-16 12:18:58.370 AEST [2205368] LOG:  checkpoint starting: immediate force wait
+2025-04-16 12:18:58.372 AEST [2205368] LOG:  checkpoint complete: wrote 10 buffers (0.1%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=10, longest=0.001 s, average=0.001 s; distance=4792 kB, estimate=132947 kB; lsn=0/35006720, redo lsn=0/350066C8
+2025-04-16 12:19:04.572 AEST [2264151] ERROR:  could not extend file "base/28942/29154": Disk quota exceeded
+2025-04-16 12:19:04.572 AEST [2264151] HINT:  Check free disk space.
+2025-04-16 12:19:04.572 AEST [2264151] STATEMENT:  ALTER TABLE ONLY public.learnable_moves
+	    ADD CONSTRAINT learnable_moves_pkey PRIMARY KEY (learnt_by, learnt_in, learnt_when, learns);
+2025-04-16 12:19:04.651 AEST [2264533] ERROR:  relation "pokemonwithegggroups" does not exist at character 243
+2025-04-16 12:19:04.651 AEST [2264533] STATEMENT:  
+	    SELECT g.Name AS Game,
+	       COUNT(DISTINCT pwg.Egg_group) AS Num_Distinct_Egg_Groups,
+	       COUNT(DISTINCT p.ID) AS Num_Distinct_Pokemon
+	FROM Games g
+	JOIN Pokedex pd ON g.ID = pd.Game
+	JOIN Pokemon p ON pd.National_ID = p.ID
+	LEFT JOIN PokemonWithEggGroups pwg ON p.ID = pwg.PokemonID
+	GROUP BY g.Name
+	ORDER BY g.Name;
+	
+2025-04-16 12:19:04.715 AEST [2264537] ERROR:  relation "pokemonwith10plussametypemoves" does not exist at character 366
+2025-04-16 12:19:04.715 AEST [2264537] STATEMENT:  
+	SELECT
+	    t.name,
+	    COUNT(DISTINCT m.id) AS num_moves,
+	    COUNT(DISTINCT p.id) AS num_pokemon_with_10_plus_moves
+	FROM types t
+	JOIN moves m ON m.of_type = t.id
+	-- count all moves of the type above
+	
+	-- join to find pokemon who have learnt these moves
+	JOIN learnable_moves lm ON lm.learns = m.id
+	JOIN pokemon p ON p.id = lm.learnt_by AND p.first_type = t.id
+	JOIN PokemonWith10PlusSameTypeMoves ps ON ps.PokemonID = p.id
+	GROUP BY t.name;
+	
+	
+2025-04-16 12:19:06.866 AEST [2264606] FATAL:  terminating autovacuum process due to administrator command
+2025-04-16 12:19:06.866 AEST [2264606] CONTEXT:  while scanning block 3428 of relation "public.learnable_moves"
+2025-04-16 12:19:06.969 AEST [2205368] LOG:  checkpoint starting: immediate force wait
+2025-04-16 12:19:06.974 AEST [2205368] LOG:  checkpoint complete: wrote 9 buffers (0.1%); 0 WAL file(s) added, 0 removed, 8 recycled; write=0.001 s, sync=0.001 s, total=0.005 s; sync files=9, longest=0.001 s, average=0.001 s; distance=146689 kB, estimate=146689 kB; lsn=0/3DF46D00, redo lsn=0/3DF46CA8
+2025-04-16 12:19:24.218 AEST [2205368] LOG:  checkpoint starting: immediate force wait
+2025-04-16 12:19:24.221 AEST [2205368] LOG:  checkpoint complete: wrote 10 buffers (0.1%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.001 s, sync=0.001 s, total=0.004 s; sync files=10, longest=0.001 s, average=0.001 s; distance=4795 kB, estimate=132500 kB; lsn=0/3E3F59E8, redo lsn=0/3E3F5990
+2025-04-16 12:19:24.324 AEST [2265335] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.389 AEST [2265342] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.449 AEST [2265347] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.509 AEST [2265351] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.565 AEST [2265356] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.624 AEST [2265361] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.685 AEST [2265365] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.745 AEST [2265370] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.805 AEST [2265374] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.862 AEST [2265378] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.923 AEST [2265382] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:24.984 AEST [2265386] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.041 AEST [2265390] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.100 AEST [2265394] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.159 AEST [2265398] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.217 AEST [2265403] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.278 AEST [2265407] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.337 AEST [2265411] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.397 AEST [2265415] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.457 AEST [2265423] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.519 AEST [2265433] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.580 AEST [2265437] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.640 AEST [2265442] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.700 AEST [2265446] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.758 AEST [2265451] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.821 AEST [2265455] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.882 AEST [2265459] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:25.943 AEST [2265467] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:26.003 AEST [2265475] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:26.060 AEST [2265479] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:26.121 AEST [2265484] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:26.181 AEST [2265488] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:26.240 AEST [2265493] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:26.298 AEST [2265497] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:26.357 AEST [2265501] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:19:26.418 AEST [2265506] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:01.422 AEST [2266019] FATAL:  lock file "postmaster.pid" already exists
+2025-04-16 12:20:01.422 AEST [2266019] HINT:  Is another postmaster (PID 2205367) running in data directory "/localstorage/z5477862/pgsql/data"?
+2025-04-16 12:20:03.759 AEST [2205367] LOG:  received fast shutdown request
+2025-04-16 12:20:03.760 AEST [2205367] LOG:  aborting any active transactions
+2025-04-16 12:20:03.762 AEST [2205367] LOG:  background worker "logical replication launcher" (PID 2205373) exited with exit code 1
+2025-04-16 12:20:03.763 AEST [2205368] LOG:  shutting down
+2025-04-16 12:20:03.763 AEST [2205368] LOG:  checkpoint starting: shutdown immediate
+2025-04-16 12:20:03.766 AEST [2205368] LOG:  checkpoint complete: wrote 9 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.004 s; sync files=10, longest=0.001 s, average=0.001 s; distance=23 kB, estimate=119252 kB; lsn=0/3E3FB748, redo lsn=0/3E3FB748
+2025-04-16 12:20:03.780 AEST [2205367] LOG:  database system is shut down
+2025-04-16 12:20:04.517 AEST [2266052] LOG:  starting PostgreSQL 17.2 on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2025-04-16 12:20:04.517 AEST [2266052] LOG:  listening on Unix socket "/localstorage/z5477862/pgsql/data/.s.PGSQL.5432"
+2025-04-16 12:20:04.519 AEST [2266055] LOG:  database system was shut down at 2025-04-16 12:20:03 AEST
+2025-04-16 12:20:04.522 AEST [2266052] LOG:  database system is ready to accept connections
+2025-04-16 12:20:09.050 AEST [2266053] LOG:  checkpoint starting: immediate force wait
+2025-04-16 12:20:09.053 AEST [2266053] LOG:  checkpoint complete: wrote 12 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.003 s; sync files=11, longest=0.001 s, average=0.001 s; distance=4791 kB, estimate=4791 kB; lsn=0/3E8A95C0, redo lsn=0/3E8A9568
+2025-04-16 12:20:09.155 AEST [2266204] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.218 AEST [2266209] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.278 AEST [2266217] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.336 AEST [2266221] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.397 AEST [2266226] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.457 AEST [2266230] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.517 AEST [2266234] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.577 AEST [2266238] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.637 AEST [2266243] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.695 AEST [2266247] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.754 AEST [2266251] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.813 AEST [2266255] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.872 AEST [2266259] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.932 AEST [2266263] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:09.991 AEST [2266267] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.050 AEST [2266271] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.109 AEST [2266275] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.168 AEST [2266279] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.226 AEST [2266283] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.286 AEST [2266287] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.348 AEST [2266291] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.406 AEST [2266295] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.465 AEST [2266299] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.525 AEST [2266303] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.585 AEST [2266307] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.645 AEST [2266311] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.704 AEST [2266317] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.763 AEST [2266321] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.822 AEST [2266325] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.881 AEST [2266329] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.939 AEST [2266333] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:10.998 AEST [2266337] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:11.057 AEST [2266342] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:11.117 AEST [2266346] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:11.179 AEST [2266350] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:11.239 AEST [2266356] FATAL:  database "z5477862-AUTOTEST-ASS2" does not exist
+2025-04-16 12:20:53.371 AEST [2266053] LOG:  checkpoint starting: immediate force wait
+2025-04-16 12:20:53.373 AEST [2266053] LOG:  checkpoint complete: wrote 10 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=10, longest=0.001 s, average=0.001 s; distance=4794 kB, estimate=4794 kB; lsn=0/3ED58150, redo lsn=0/3ED580F8
+2025-04-16 12:20:58.364 AEST [2267497] LOG:  skipping vacuum of "learnable_moves" --- lock not available
+2025-04-16 12:20:59.358 AEST [2267345] ERROR:  could not extend file "base/30286/30498": Disk quota exceeded
+2025-04-16 12:20:59.358 AEST [2267345] HINT:  Check free disk space.
+2025-04-16 12:20:59.358 AEST [2267345] STATEMENT:  ALTER TABLE ONLY public.learnable_moves
+	    A2025-04-16 12:20:59.439 AEST [2267521] ERROR:  relation "pokemonwithegggroups" does not exist at character 243
+2025-04-16 12:20:59.439 AEST [2267521] STATEMENT:  
+	    SELECT g.Name AS Game,
+	       COUNT(DISTINCT pwg.Egg_group) AS Num_Distinct_Egg_Groups,
+	       COUNT(DISTINCT p.ID) AS Num_Distinct_Pokemon
+	FROM Games g
+	JOIN Pokedex pd ON g.ID = pd.Game
+	JOIN Pokemon p ON pd.National_ID = p.ID
+	LEFT JOIN PokemonWithEggGroups pwg ON p.ID = pwg.PokemonID
+	GROUP BY g.Name
+	ORDER BY g.Name;
+	
+2025-04-16 12:20:59.505 AEST [2267525] ERROR:  relation "pokemonwith10plussametypemoves" does not exist at character 366
+2025-04-16 12:20:59.505 AEST [2267525] STATEMENT:  
+	SELECT
+	    t.name,
+	    COUNT(DISTINCT m.id) AS num_moves,
+	    COUNT(DISTINCT p.id) AS num_pokemon_with_10_plus_moves
+	FROM types t
+	JOIN moves m ON m.of_type = t.id
+	-- count all moves of the type above
+	
+	-- join to find pokemon who have learnt these moves
+	JOIN learnable_moves lm ON lm.learns = m.id
+	JOIN pokemon p ON p.id = lm.learnt_by AND p.first_type = t.id
+	JOIN PokemonWith10PlusSameTypeMoves ps ON ps.PokemonID = p.id
+	GROUP BY t.name;
+	
+	
+2025-04-16 12:21:01.563 AEST [2266053] LOG:  checkpoint starting: immediate force wait
+2025-04-16 12:21:01.568 AEST [2266053] LOG:  checkpoint complete: wrote 9 buffers (0.1%); 0 WAL file(s) added, 0 removed, 9 recycled; write=0.002 s, sync=0.001 s, total=0.005 s; sync files=9, longest=0.001 s, average=0.001 s; distance=147419 kB, estimate=147419 kB; lsn=0/47D4ED60, redo lsn=0/47D4ED08
