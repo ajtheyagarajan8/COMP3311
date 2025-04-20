@@ -18,7 +18,6 @@ WITH RECURSIVE evolution_chain AS (
     FROM Evolutions e
     JOIN Pokemon pre ON e.Pre_Evolution = pre.ID
     JOIN Pokemon post ON e.Post_Evolution = post.ID
-    WHERE pre.Name ILIKE %s OR post.Name ILIKE %s
 
     UNION ALL
 
@@ -68,24 +67,27 @@ def main(db):
     name = sys.argv[1].lower()
 
     with db.cursor() as cur:
-        cur.execute(query, [f"%{name}%", f"%{name}%"])
+        # Run recursive query
+        cur.execute(query)
         rows = cur.fetchall()
 
-        # Build evolution chains
+        # Parse results into chains
         chains = {}
-        involved = set()
-
+        root_to_chain = {}
+        # In the loop where you're building the chains dictionary, ensure to track pre-evolutions as well
+        
         for pre, post, depth, name_chain, req, inv, evo_id in rows:
+            root = name_chain[0]
+            if root not in chains:
+                chains[root] = {}
             if pre not in chains:
-                chains[pre] = {}
+                chains[pre] = {}  # Ensure pre-evolution is added to the chain
             if post not in chains[pre]:
                 chains[pre][post] = []
             chains[pre][post].append((req, inv))
+            root_to_chain[root] = name_chain
 
-            # Track base names for filtering
-            involved.add(name_chain[0])
-
-        # Get Pokémon with no evolutions that match the filter
+        # Find Pokémon with no evolutions at all that match
         cur.execute('''
             SELECT Name
             FROM Pokemon
@@ -95,29 +97,48 @@ def main(db):
         ''', [f"%{name}%"])
         no_evos = [row[0] for row in cur.fetchall()]
 
-        # Combine both evolution bases and no-evo matches, filter by input
-        matched_names = set()
-        for pname in list(chains.keys()) + no_evos:
-            if name in pname.lower():
-                matched_names.add(pname)
+                # Only include root if it or any of its descendants contains the search substring
+        matched_roots = set()
 
-        for pname in sorted(matched_names):
+        def subtree_contains(pokemon, visited=None):
+            if visited is None:
+                visited = set()
+            if pokemon in visited:
+                return False
+            visited.add(pokemon)
+            if name in pokemon.lower():
+                return True
+            for next_evo in chains.get(pokemon, {}):
+                if subtree_contains(next_evo, visited):
+                    return True
+            return False
+
+        for root in root_to_chain:
+            if subtree_contains(root):
+                matched_roots.add(root)
+
+
+        printed = set()
+
+        def print_evos(curr, indent=1):
+            if curr not in chains:
+                return
+            for next_evo in sorted(chains[curr].keys()):
+                reqs = format_req(chains[curr][next_evo])
+                req_str = ' AND '.join(f"[{r}]" for r in reqs) if reqs else "[No Requirement]"
+                print(f"{'+' * indent} For \"{next_evo}\", The evolution requirement is {req_str}")
+                print_evos(next_evo, indent + 1)
+
+        for pname in sorted(matched_roots.union(no_evos)):
+            if pname in printed or name.lower() not in pname.lower():
+                continue
             print(f"{pname}: The full evolution chain:")
             print(pname)
-
-            def print_evos(curr, indent=1):
-                if curr not in chains:
-                    print("- No Evolutions")
-                    return
-                for next_evo in sorted(chains[curr].keys()):
-                    reqs = format_req(chains[curr][next_evo])
-                    req_str = f"[{' AND '.join(reqs)}]" if reqs else "[No Requirement]"
-                    print(f"{'+' * indent} For \"{next_evo}\", The evolution requirement is {req_str}")
-                    print_evos(next_evo, indent + 1)
-
-            print_evos(pname)
-
-    return 0
+            if pname in chains:
+                print_evos(pname)
+            else:
+                print("- No Evolutions")
+            printed.add(pname)
 
 if __name__ == '__main__':
     exit_code = 0
