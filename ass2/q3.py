@@ -34,7 +34,7 @@ FROM
     JOIN Moves m ON m.id = l.LEARNS
 WHERE
     p.name = %s
-    AND r.Assertion LIKE 'Level: %'
+    AND r.Assertion LIKE 'Level: %%'
 GROUP BY
     m.name
 HAVING
@@ -50,18 +50,22 @@ def main(db):
         return 1
 
     pokemon_name = sys.argv[1]
-
+    
     try:
         with db.cursor() as cur:
-            cur.execute(query, ['Bulbasaur'])
+            cur.execute("SELECT 1 FROM Pokemon WHERE name = %s LIMIT 1;", [pokemon_name])
+            if cur.fetchone() is None:
+                print(f'Pokemon "{pokemon_name}" not found')
+                exit()
+            cur.execute(query,[pokemon_name])
             results = cur.fetchall()
             if not results:
+                print(f'No moves learnable in at least 30 games found for Pokemon "{pokemon_name}"')
                 return 0
-
-            helpers.pretty_print_cols(("MoveName", 16), ("#Games", 6), ("AvgLearntLevel", 16))
+            helpers.pretty_print_cols(("MoveName", 16), ("#Games", 6), ("#AvgLearntLevel", 16))
 
             for move_name, game, avg_learnt_level in results:
-                helpers.pretty_print_cols((f"{move_name}", 16), (f"{game}", 6), (f"{avg_learnt_level}", 8))
+                    helpers.pretty_print_cols((f"{move_name}", 16), (f"{game}", 6), (f"{avg_learnt_level}", 8))
 
     except psycopg2.Error as e:
         print("Query execution error:", e)
