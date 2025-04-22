@@ -1,144 +1,215 @@
 #! /usr/bin/env python3
+"""
+COMP3311
+25T1
+Assignment 2
+Pokemon Database
+
+Written by: <YOUR NAME HERE> <YOUR STUDENT ID HERE>
+Written on: <DATE HERE>
+
+File Name: Q4
+"""
+
 
 import sys
 import psycopg2
+import helpers
+from collections import defaultdict
 
+
+### Constants
 USAGE = f"Usage: {sys.argv[0]} <pokemon_name>"
 
-query = '''
-WITH RECURSIVE evolution_chain AS (
+query1 = '''
+WITH RECURSIVE EvolutionChain AS (
+    -- Base case: start with Pokémon matching name
     SELECT
-        e.Pre_Evolution,
-        pre.Name AS Pre_Name,
-        e.Post_Evolution,
-        post.Name AS Post_Name,
-        1 AS depth,
-        ARRAY[pre.Name, post.Name] AS name_chain,
-        e.ID AS evolution_id
-    FROM Evolutions e
-    JOIN Pokemon pre ON e.Pre_Evolution = pre.ID
+        pre.ID AS Start_ID,
+        pre.Name AS Start_Name,
+        post.ID AS Next_ID,
+        post.Name AS Next_Name,
+        e.ID AS Evolution_ID
+    FROM Pokemon pre
+    JOIN Evolutions e ON e.Pre_Evolution = pre.ID
     JOIN Pokemon post ON e.Post_Evolution = post.ID
+    WHERE pre.Name ILIKE '%pik%' OR post.Name ILIKE '%pik%'
 
-    UNION ALL
+    UNION
 
+    -- Recursive step: find further evolutions of already discovered evolutions
     SELECT
-        e.Pre_Evolution,
-        pre.Name AS Pre_Name,
-        e.Post_Evolution,
-        post.Name AS Post_Name,
-        ec.depth + 1 AS depth,
-        ec.name_chain || post.Name,
-        e.ID AS evolution_id
-    FROM evolution_chain ec
-    JOIN Evolutions e ON e.Pre_Evolution = ec.Post_Evolution
-    JOIN Pokemon pre ON e.Pre_Evolution = pre.ID
+        ec.Start_ID,
+        ec.Start_Name,
+        post.ID AS Next_ID,
+        post.Name AS Next_Name,
+        e.ID AS Evolution_ID
+    FROM EvolutionChain ec
+    JOIN Evolutions e ON e.Pre_Evolution = ec.Next_ID
+    JOIN Pokemon post ON e.Post_Evolution = post.ID
+)
+
+SELECT
+    ec.Start_Name AS From_Pokemon,
+    ec.Next_Name AS To_Pokemon,
+    r.Assertion AS Requirement,
+    er.Inverted
+FROM EvolutionChain ec
+LEFT JOIN Evolution_Requirements er ON er.Evolution = ec.Evolution_ID
+LEFT JOIN Requirements r ON er.Requirement = r.ID
+ORDER BY ec.Start_Name, ec.Next_Name, r.Assertion;
+'''
+
+query = '''
+WITH RECURSIVE EvolutionChain AS (
+    -- Base case: start with all Pokémon with 'Pik' in their name
+    SELECT
+        pre.ID AS Start_ID,
+        pre.Name AS Start_Name,
+        post.ID AS Next_ID,
+        post.Name AS Next_Name,
+        e.ID AS Evolution_ID
+    FROM Pokemon pre
+    LEFT JOIN Evolutions e ON e.Pre_Evolution = pre.ID
+    LEFT JOIN Pokemon post ON e.Post_Evolution = post.ID
+    WHERE pre.Name ILIKE %s OR post.Name ILIKE %s
+
+    UNION
+
+    -- Recursive case: follow the evolution chain
+    SELECT
+        ec.Start_ID,
+        ec.Start_Name,
+        post.ID AS Next_ID,
+        post.Name AS Next_Name,
+        e.ID AS Evolution_ID
+    FROM EvolutionChain ec
+    JOIN Evolutions e ON e.Pre_Evolution = ec.Next_ID
     JOIN Pokemon post ON e.Post_Evolution = post.ID
 )
 SELECT
-    ec.Pre_Name,
-    ec.Post_Name,
-    ec.depth,
-    ec.name_chain,
-    r.Assertion AS requirement,
-    er.Inverted,
-    ec.evolution_id
-FROM evolution_chain ec
-LEFT JOIN Evolution_Requirements er ON er.Evolution = ec.evolution_id
+    ec.Start_Name AS From_Pokemon,
+    ec.Next_Name AS To_Pokemon,
+    r.Assertion AS Requirement,
+    er.Inverted
+FROM EvolutionChain ec
+LEFT JOIN Evolution_Requirements er ON er.Evolution = ec.Evolution_ID
 LEFT JOIN Requirements r ON er.Requirement = r.ID
-ORDER BY ec.name_chain, ec.evolution_id, r.ID;
+ORDER BY r.id, ec.start_name, ec.next_name, r.assertion, er.inverted;
 '''
 
-def format_req(reqs):
-    result = []
-    seen = set()
-    for req, inverted in reqs:
-        if req:
-            entry = f"Not {req}" if inverted else req
-            if entry not in seen:
-                result.append(entry)
-                seen.add(entry)
-    return result
+def print_output(data):
+    from collections import defaultdict
+
+    evo_graph = defaultdict(list)
+    reverse_graph = defaultdict(list)
+    all_pokemon = set()
+
+    for pre, post, req, inv in data:
+        all_pokemon.add(pre)
+        if post:
+            all_pokemon.add(post)
+            label = f"Not {req}" if inv else req
+            evo_graph[pre].append((post, label))
+            reverse_graph[post].append(pre)
+
+    # Step 2: Find roots (no pre-evolutions)
+    roots = [p for p in all_pokemon if not reverse_graph[p]]
+
+    # Step 3: DFS to find all evolution chains
+    def dfs(chain, current, chains, seen_paths):
+        if current not in evo_graph:
+            chain_key = tuple(p for p, _ in chain)
+            if chain_key not in seen_paths:
+                seen_paths.add(chain_key)
+                chains.append(chain)
+            return
+
+        targets = defaultdict(list)
+        for post, req in evo_graph[current]:
+            targets[post].append(req)
+        for post, reqs in targets.items():
+            dfs(chain + [(post, reqs)], post, chains, seen_paths)
+
+    full_chains = {}
+    for root in roots:
+        chains = []
+        seen_paths = set()
+        dfs([(root, [])], root, chains, seen_paths)
+        full_chains[root] = chains
+
+    # Step 4: Filter by search term
+    query = sys.argv[1].lower()
+    matching = [p for p in all_pokemon if query in p.lower()]
+    
+    # Step 5: Print results
+    for name in sorted(matching):
+        print(f"{name}: The full evolution chain:")
+
+        # Special case: Pokémon with no evolutions or pre-evolutions
+        if name not in evo_graph and not reverse_graph[name]:
+            print(name)
+            print("- No Evolutions")
+            continue
+
+        # Find root
+        root = name
+        while reverse_graph[root]:
+            root = reverse_graph[root][0]
+
+        chains = full_chains.get(root, [])
+        printed = False
+        list_main_names_printed = []
+
+        # Filter the chains to only those involving the current name
+        relevant_chains = [chain for chain in chains if any(name == p for p, _ in chain)]
+
+        if relevant_chains:
+            # Print the root only once
+            print(relevant_chains[0][0][0])
+            list_main_names_printed.append(relevant_chains[0][0][0])
+            printed = True
+
+            printed_steps = set()  # Track what's been printed at each depth
+
+            for chain in relevant_chains:
+                for depth, (post, reqs) in enumerate(chain[1:], start=1):
+                    sorted_reqs = tuple(sorted(reqs, key=lambda r: (0 if "Region" in r else 1 if "Use Item" in r else 2, r)))
+                    step_key = (post, sorted_reqs)
+                    if step_key in printed_steps:
+                        continue  # Skip duplicate step
+                    printed_steps.add(step_key)
+
+                    indent = '+' * depth
+                    print(f"{indent} For \"{post}\", The evolution requirement is [{'] AND ['.join(sorted_reqs)}]")
+        else:
+            print(name)
+            print("- No Evolutions")
 
 def main(db):
+    ### Command-line args
     if len(sys.argv) != 2:
         print(USAGE)
         return 1
 
-    name = sys.argv[1].lower()
+    pokemon_name = sys.argv[1]
 
-    with db.cursor() as cur:
-        # Run recursive query
-        cur.execute(query)
-        rows = cur.fetchall()
-
-        # Parse results into chains
-        chains = {}
-        root_to_chain = {}
-        # In the loop where you're building the chains dictionary, ensure to track pre-evolutions as well
-        
-        for pre, post, depth, name_chain, req, inv, evo_id in rows:
-            root = name_chain[0]
-            if root not in chains:
-                chains[root] = {}
-            if pre not in chains:
-                chains[pre] = {}  # Ensure pre-evolution is added to the chain
-            if post not in chains[pre]:
-                chains[pre][post] = []
-            chains[pre][post].append((req, inv))
-            root_to_chain[root] = name_chain
-
-        # Find Pokémon with no evolutions at all that match
-        cur.execute('''
-            SELECT Name
-            FROM Pokemon
-            WHERE Name ILIKE %s
-              AND ID NOT IN (SELECT Pre_Evolution FROM Evolutions WHERE Pre_Evolution IS NOT NULL)
-              AND ID NOT IN (SELECT Post_Evolution FROM Evolutions WHERE Post_Evolution IS NOT NULL)
-        ''', [f"%{name}%"])
-        no_evos = [row[0] for row in cur.fetchall()]
-
-                # Only include root if it or any of its descendants contains the search substring
-        matched_roots = set()
-
-        def subtree_contains(pokemon, visited=None):
-            if visited is None:
-                visited = set()
-            if pokemon in visited:
-                return False
-            visited.add(pokemon)
-            if name in pokemon.lower():
-                return True
-            for next_evo in chains.get(pokemon, {}):
-                if subtree_contains(next_evo, visited):
-                    return True
-            return False
-
-        for root in root_to_chain:
-            if subtree_contains(root):
-                matched_roots.add(root)
-
-
-        printed = set()
-
-        def print_evos(curr, indent=1):
-            if curr not in chains:
-                return
-            for next_evo in sorted(chains[curr].keys()):
-                reqs = format_req(chains[curr][next_evo])
-                req_str = ' AND '.join(f"[{r}]" for r in reqs) if reqs else "[No Requirement]"
-                print(f"{'+' * indent} For \"{next_evo}\", The evolution requirement is {req_str}")
-                print_evos(next_evo, indent + 1)
-
-        for pname in sorted(matched_roots.union(no_evos)):
-            if pname in printed or name.lower() not in pname.lower():
-                continue
-            print(f"{pname}: The full evolution chain:")
-            print(pname)
-            if pname in chains:
-                print_evos(pname)
-            else:
-                print("- No Evolutions")
-            printed.add(pname)
+    try:
+        with db.cursor() as cur:
+            cur.execute(query,[f"%{pokemon_name}%",f"%{pokemon_name}%"] )
+            rows = cur.fetchall()
+            data = []
+            for row in rows:
+                from_pokemon, to_pokemon, requirement, inverted = row
+                # Convert 't'/'f' to True/False
+                if inverted in ('t', 'f'):  # From PostgreSQL boolean
+                    inverted = inverted == 't'
+                data.append((from_pokemon, to_pokemon, requirement, inverted))
+            
+            print_output(data)
+    except psycopg2.Error as e:
+        print("Query execution error:", e)
+        return 1
 
 if __name__ == '__main__':
     exit_code = 0
@@ -147,11 +218,11 @@ if __name__ == '__main__':
         db = psycopg2.connect(dbname="pkmon")
         exit_code = main(db)
     except psycopg2.Error as err:
-        print("DB error:", err)
+        print("DB error: ", err)
         exit_code = 1
     except Exception as err:
-        print("Internal Error:", err)
-        raise
+        print("Internal Error: ", err)
+        raise err
     finally:
         if db is not None:
             db.close()
